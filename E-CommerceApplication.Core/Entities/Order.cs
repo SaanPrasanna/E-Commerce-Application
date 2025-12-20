@@ -20,7 +20,7 @@ namespace E_CommerceApplication.Core.Entities {
         public decimal FinalAmount { get; set; }
 
         // SHIPPING
-        public Guid ShipppingAddressId { get; set; }
+        public Guid ShippingAddressId { get; set; }
         public Address ShippingAddress { get; set; } = null!;
 
         // PAYMENT
