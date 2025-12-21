@@ -61,11 +61,11 @@ namespace E_CommerceApplication.Core.DTOs.Product {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public decimal Price { get; set; }
-        public decimal? Discountprice { get; set; }
+        public decimal? DiscountPrice { get; set; }
         public string? MainImageUrl { get; set; }
         public List<string> ImageUrls { get; set; } = new List<string>();
         public bool InStock { get; set; }
-        public decimal AveragePrice { get; set; }
+        public decimal AverageRating { get; set; }
         public int ReviewCount { get; set; }
         public string CategoryName { get; set; } = string.Empty;
 
