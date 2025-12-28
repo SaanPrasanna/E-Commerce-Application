@@ -22,7 +22,7 @@ namespace E_CommerceApplication.Application.Services {
             _context = context;
         }
 
-        public async Task<PagedResult<ProductListDto>> GetProductAsync(ProductFilterParam filterParam) {
+        public async Task<PagedResult<ProductListDto>> GetProductsAsync(ProductFilterParam filterParam) {
             var query = _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Reviews)
@@ -93,43 +93,97 @@ namespace E_CommerceApplication.Application.Services {
                 })
                 .ToListAsync();
 
-                return new PagedResult<ProductListDto> {
-                    Items = products,
-                    TotalCount = totalItems,
-                    PageNumber = filterParam.PageNumber,
-                    PageSize = filterParam.PageSize
-                };
+            return new PagedResult<ProductListDto> {
+                Items = products,
+                TotalCount = totalItems,
+                PageNumber = filterParam.PageNumber,
+                PageSize = filterParam.PageSize
+            };
+        }
+
+        public async Task<IEnumerable<ProductListDto>> GetFeaturedProductsAsync(int count = 10) {
+            return await _context.Products
+                .Where(p => p.IsFeatured && p.IsActive && p.StockQuantity > 0)
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(count)
+                .Select(p => new ProductListDto {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Price = p.Price,
+                    DiscountPrice = p.Discount,
+                    MainImageUrl = p.MainImageUrl,
+                    InStock = p.StockQuantity > 0,
+                    AverageRating = p.AverageRating,
+                    ReviewCount = p.ReviewCount,
+                    CategoryName = p.Category.Name
+                })
+                .ToListAsync();
+        }
+
+        public async Task<ProductResponseDto> GetProductByIdAsync(Guid id) {
+            var product = await _context.Products.Include(p => p.Category).Include(p => p.Reviews).FirstOrDefaultAsync(p => p.Id == id);
+
+            if (product == null) throw new KeyNotFoundException($"Product with ID {id} was not found.");
+
+            return new ProductResponseDto {
+                Id = product.Id,
+                Name = product.Name,
+                Description = product.Description,
+                Price = product.Price,
+                Discountprice = product.Discount,
+                StockQuantity = product.StockQuantity,
+                MainImageUrl = product.MainImageUrl,
+                ImageUrls = product.ImageUrls.ToList(),
+                SKU = product.SKU,
+                IsActive = product.IsActive,
+                IsFeatured = product.IsFeatured,
+                CategoryId = product.CategoryId,
+                CategoryName = product.Category.Name,
+                AverateRating = product.AverageRating,
+                ReviewCount = product.ReviewCount,
+                CreatedAt = product.CreatedAt
+            };
+
+        }
+
+        public async Task<IEnumerable<ProductListDto>> GetRelatedProductsAsync(Guid id, int count = 5) {
+            var product = await _context.Products.FindAsync(id);
+
+            if (product == null) throw new KeyNotFoundException($"Product with ID {id} was not found.");
+
+            return await _context.Products
+                .Where(p => p.CategoryId == product.CategoryId && p.Id != id && p.IsActive)
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(count)
+                .Select(p => new ProductListDto {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Price = p.Price,
+                    DiscountPrice = p.Discount,
+                    MainImageUrl = p.MainImageUrl,
+                    InStock = p.StockQuantity > 0,
+                    AverageRating = p.AverageRating,
+                    ReviewCount = p.ReviewCount,
+                    CategoryName = p.Category.Name
+                })
+                .ToListAsync();
         }
 
         public Task<ProductResponseDto> CreateProductAsync(CreateProductDto createProductDto) {
             throw new NotImplementedException();
         }
-        public Task<bool> DeleteProductAsync(int productId) {
-            throw new NotImplementedException();
-        }
-        public Task<IEnumerable<ProductListDto>> GetFeaturedProductsAsync(int count = 10) {
-            throw new NotImplementedException();
-        }
-        public Task<ProductResponseDto> GetProductByIdAsync(int productId) {
-            throw new NotImplementedException();
-        }
-        public Task<IEnumerable<ProductListDto>> GetRelatedProductsAsync(Guid id, int count = 5) {
-            throw new NotImplementedException();
-        }
-        public Task<ProductResponseDto> UpdateProductAsync(int productId, UpdateProductDto updateProductDto) {
-            throw new NotImplementedException();
-        }
-
-        Task<ProductResponseDto> IProductService.GetProductAsync(ProductFilterParam filterParam) {
-            throw new NotImplementedException();
-        }
-
-        public Task<ProductResponseDto> GetProductByIdAsync(Guid productId) {
-            throw new NotImplementedException();
-        }
 
         public Task<ProductResponseDto> UpdateProductAsync(Guid productId, UpdateProductDto updateProductDto) {
             throw new NotImplementedException();
+        }
+
+        public async Task<bool> DeleteProductAsync(Guid productId) {
+            var product = await _productRepository.GetByIdAsync(productId);
+
+            if (product == null) throw new KeyNotFoundException($"Product with ID {productId} was not found.");
+
+            await _productRepository.DeleteAsync(product);
+            return true;
         }
     }
 }
