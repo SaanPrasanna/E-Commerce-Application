@@ -29,6 +29,7 @@ namespace E_CommerceApplication.Core.DTOs.Product {
         public string? SKU { get; set; }
         public Guid CategoryId { get; set; }
         public bool IsFeatured { get; set; }
+        public bool IsActive { get; set; }
     }
 
     public class ProductResponseDto {

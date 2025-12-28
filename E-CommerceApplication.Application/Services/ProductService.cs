@@ -169,12 +169,80 @@ namespace E_CommerceApplication.Application.Services {
                 .ToListAsync();
         }
 
-        public Task<ProductResponseDto> CreateProductAsync(CreateProductDto createProductDto) {
-            throw new NotImplementedException();
+        public async Task<ProductResponseDto> CreateProductAsync(CreateProductDto dto) {
+            var category = await _context.Categories.FindAsync(dto.CategoryId);
+            if (category == null) throw new KeyNotFoundException($"Category with ID {dto.CategoryId} was not found.");
+
+            var product = new Product {
+                Name = dto.Name,
+                Description = dto.Description,
+                Price = dto.Price,
+                Discount = dto.DiscountPrice,
+                StockQuantity = dto.StockQuantity,
+                MainImageUrl = dto.MainImageUrl,
+                ImageUrls = dto.ImageUrls ?? [],
+                SKU = dto.SKU,
+                CategoryId = dto.CategoryId,
+                IsActive = true,
+                IsFeatured = dto.IsFeatured,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var createdProduct = await _productRepository.AddAsync(product);
+            return new ProductResponseDto {
+                Id = createdProduct.Id,
+                Name = createdProduct.Name,
+                Description = createdProduct.Description,
+                Price = createdProduct.Price,
+                Discountprice = createdProduct.Discount,
+                StockQuantity = createdProduct.StockQuantity,
+                MainImageUrl = createdProduct.MainImageUrl,
+                ImageUrls = createdProduct.ImageUrls.ToList(),
+                SKU = createdProduct.SKU,
+                IsActive = createdProduct.IsActive,
+                IsFeatured = createdProduct.IsFeatured,
+                CategoryId = createdProduct.CategoryId,
+                CategoryName = category.Name,
+                CreatedAt = createdProduct.CreatedAt,
+                AverateRating = createdProduct.AverageRating
+            };
         }
 
-        public Task<ProductResponseDto> UpdateProductAsync(Guid productId, UpdateProductDto updateProductDto) {
-            throw new NotImplementedException();
+        public async Task<ProductResponseDto> UpdateProductAsync(Guid productId, UpdateProductDto dto) {
+            var product = await _context.Products.Include(p => p.Category).FirstOrDefaultAsync(p => p.Id == productId);
+            if (product == null) throw new KeyNotFoundException($"Product with ID {productId} was not found.");
+
+            product.Name = dto.Name;
+            product.Description = dto.Description;
+            product.Price = dto.Price;
+            product.Discount = dto.DiscountPrice;
+            product.StockQuantity = dto.StockQuantity;
+            product.MainImageUrl = dto.MainImageUrl;
+            product.ImageUrls = dto.ImageUrls ?? [];
+            product.CategoryId = dto.CategoryId;
+            product.IsActive = dto.IsActive;
+            product.IsFeatured = dto.IsFeatured;
+
+            await _productRepository.UpdateAsync(product);
+
+            return new ProductResponseDto {
+                Id = product.Id,
+                Name = product.Name,
+                Description = product.Description,
+                Price = product.Price,
+                Discountprice = product.Discount,
+                StockQuantity = product.StockQuantity,
+                MainImageUrl = product.MainImageUrl,
+                ImageUrls = product.ImageUrls.ToList(),
+                SKU = product.SKU,
+                IsActive = product.IsActive,
+                IsFeatured = product.IsFeatured,
+                CategoryId = product.CategoryId,
+                CategoryName = product.Category.Name,
+                AverateRating = product.AverageRating,
+                ReviewCount = product.ReviewCount,
+                CreatedAt = product.CreatedAt
+            };
         }
 
         public async Task<bool> DeleteProductAsync(Guid productId) {
